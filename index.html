@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Send Logged-in User</title>
+  <script src="https://my.geotab.com/sdk/javascript"></script>
+  <style>
+    #guarded-label {
+      font-weight: bold;
+      color: green;
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <button id="sendUser">Send User Info</button><span id="guarded-label"></span>
+  <pre id="result"></pre>
+
+  <script>
+    document.getElementById("sendUser").addEventListener("click", function () {
+      geotab.getSession(function (session) {
+        const database = session.database;
+        const userId = session.userId;
+
+        geotab.call("Get", {
+          typeName: "User",
+          search: { id: userId }
+        }, function (result) {
+          const user = result[0];
+          document.getElementById("result").textContent = JSON.stringify(user, null, 2);
+
+          fetch("https://your-api.com/receive-user", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              id: user.id,
+              name: user.name,
+              email: user.name,
+              database: database
+            })
+          })
+          .then(res => res.json())
+          .then(data => {
+            console.log("API response:", data);
+            document.getElementById("guarded-label").textContent = "GUARDED";
+          })
+          .catch(err => console.error("API error:", err));
+        }, function (err) {
+          console.error("User fetch error:", err);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
